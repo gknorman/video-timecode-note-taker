@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<style type="text/css">
+		table, th, td {
+		  border: 1px solid black;
+		  border-collapse: collapse;
+		}
+		th {
+		  padding: 5px 15px 5px 15px;
+		}
+		th {
+		  text-align: left;
+		}
+	</style>
+
+
+</head>
+<body>
+	<label id="timer">Timecode: 00:00:00</label>
+	<p></p>
+	<div id="currentFPS">Current FPS: </div>
+	<!-- <label for="fps">Change FPS: </label> -->
+		<input type="number" name="fps" id="fps" placeholder="Enter new framerate">
+		<button onclick="changeFPS(document.getElementById('fps').value)"> UPDATE FPS </button>
+	<p></p>
+	<label for="comments">Comments:</label>
+<!-- 	<form> -->
+		<input type="text" id="comments" name="comments"><br />
+		
+		<input type="submit" value="Submit" id="submit" onclick="newLap(document.getElementById('comments').value)">
+<!-- 	</form> -->
+	<p></p>
+	<button onclick="start()" id="startbtn"> START </button>
+	<button onclick="newLap()" id="newLap"> LAP </button>
+	<button onclick="reset()" id="resetbtn"> RESET </button>
+	<button onclick="download()" id="downloadButton"> SAVE DATA</button>
+	<p></p>
+	<section id="lapssection">
+		<table id="lapTable" class="lapTable">
+			<tr id="lapHeader">
+				<th>#</th>
+				<th>Timecode</th>
+				<th>Note</th>
+			</tr>
+		</table>
+	</section>
+
+	<script type="text/javascript">
+
+		let notesData = [];
+
+		let m, s, ms, newlap, started, interval;
+		let fps, milli_to_FPS
+		let totalRunningTime;
+
+		const comments = document.getElementById("comments");
+
+		comments.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("submit").click();
+			}
+		});
+
+
+		const startbtn = document.getElementById("startbtn");
+		const resetbtn = document.getElementById("resetbtn");
+
+		const lapbtn = document.getElementById("newLap");
+		const lapssect = document.getElementById("lapssection");
+		const lapTable = document.getElementById("lapTable");
+		const fpsBtn = document.getElementById("currentFPS");
+		fpsBtn.innerHTML = "Current FPS: " + String(fps);
+	    
+	    // var milli_to_FPS = (1000/fps).toFixed(2);
+
+
+		document.addEventListener('DOMContentLoaded', () => {
+		  const ref = localStorage.getItem('notesItemsRef');
+		  if (ref) {
+		    tableData = JSON.parse(ref);
+		    notesData = tableData;
+		   	renderNotes(tableData);
+		   	timerData = tableData[tableData.length - 1];
+		   	m = timerData.m;
+		   	s = timerData.s;
+		   	ms = timerData.ms;
+		   	totalRunningTime = timerData.totalRunningTime;
+		   	fps = timerData.fps;
+		   	milli_to_FPS = timerData.milli_to_FPS;
+		   	fpsBtn.innerHTML = "Current FPS: " + String(fps);
+		  } else {
+		  	resetNotes();
+		  }
+		});
+
+
+		// Need to link reset() to here
+		function resetNotes() {
+			console.log("resetting notes");
+			m = 0;
+			s = 0;
+			ms = 0;
+			newlap = 1;
+			started = false;
+			fps = 29.97;
+			totalRunningTime = 0;
+			milli_to_FPS = (1000/fps).toFixed(2);
+			fpsBtn.innerHTML = "Current FPS: " + String(fps);
+			document.getElementById("timer").innerHTML="Timecode: 00:00:00";
+			document.getElementById("startbtn").innerHTML=" START ";
+		}
+
+		function reset(){
+	        let lapsarr=document.getElementById("lapTable").getElementsByClassName("lap");
+	        let l=lapsarr.length;
+	        // var ps=lapssect.getElementsByTagName("p");
+	        for(i=0; i<l; i+=1){
+	            lapTable.removeChild(lapsarr[0]);
+	        }
+	        notesData = [];
+	        localStorage.removeItem('notesItemsRef');
+
+	        clearInterval(interval);
+	        resetNotes();
+	        
+	        // document.getElementById("timer").innerHTML="Timecode: 00:00:00";
+    }
+
+
+		function changeFPS(newFPS="") {
+	    	if (newFPS) {
+	    		fps = newFPS;
+	    		fpsBtn.innerHTML = "Current FPS: " + String(fps);
+	    		milli_to_FPS = (1000/fps).toFixed(2);
+	    	} else {
+	    		fps = 29.97;
+	    		fpsBtn.innerHTML = "Current FPS: " + String(fps);
+	    		milli_to_FPS = (1000/fps).toFixed(2);
+	    	}
+	    	fpsBtn.innerHTML = "Current FPS: " + String(fps);
+	    	localStorage.setItem('savedFPS',fps);
+	    	if (notesData.length > 0) {
+	    		replaceTimecode();
+	    	}
+	    }
+
+	    function replaceTimecode() {
+	    	let lapsarr=document.getElementById("lapTable").getElementsByClassName("lap");
+	        let l=lapsarr.length;
+	        // var ps=lapssect.getElementsByTagName("p");
+			// const fullTable = document.querySelector('lapTable');
+	        for(i=0; i<l; i+=1){
+	        	rowData = notesData[i];
+
+	        	let timecodeNew = String(rowData.m).padStart(2,'0')+":"+String(rowData.s).padStart(2,'0')+":"+String(Math.floor(rowData.ms/milli_to_FPS)).padStart(2,'0');
+	            const rowItem = document.querySelector(`[data-key='${rowData.data_key}']`);
+	            if (rowItem) {
+    				rowItem.cells[1].innerHTML = timecodeNew;
+    			}
+	        }
+	    }
+
+		function renderNotes(data=notesData) {
+			const savedFPS = localStorage.getItem('savedFPS');
+			if (savedFPS) {
+				fps = savedFPS;
+			} else {
+				fps = 29.97;
+			}
+
+			fpsBtn.innerHTML = "Current FPS: " + String(fps);
+
+			if (data.length > 0) {
+				data.forEach(t => {
+				renderRow(t);
+				// notesData.push(rowData);
+		      	console.log("content loaded:",t);
+		    	})
+			} else {
+				resetNotes();
+			}
+
+		    // localStorage.setItem('notesItemsRef', JSON.stringify(tableData));
+		};
+
+		function renderRow(rowData) {
+			
+    		const rowItem = document.querySelector(`[data-key='${rowData.data_key}']`);
+			const fullTable = document.querySelector('lapTable');
+
+			let lapRow = document.createElement("tr");
+    		lapRow.setAttribute("class","lap");
+    		lapRow.setAttribute('data-key', rowData.data_key);
+    		lapRow.setAttribute('noteTime', rowData.totalRunningTime);
+
+    		let lapNum = document.createElement("td");
+    		lapNum.setAttribute("class","#");
+    		lapNum.innerHTML = rowData.newlap;
+
+    		let lapLabel = document.createElement("td");
+    		lapLabel.setAttribute("class","lapText");
+
+    		let lapComment = document.createElement("td");
+    		lapComment.setAttribute("class","lapComment");
+    		lapComment.innerHTML = rowData.userComment;
+
+
+    		let lapLblTxt = document.createTextNode(rowData.timecode);
+
+    		lapLabel.appendChild(lapLblTxt);
+
+    		lapRow.appendChild(lapNum);
+    		lapRow.appendChild(lapLabel);
+    		lapRow.appendChild(lapComment);
+
+			if (rowItem) {
+    			fullTable.replaceChild(lapRow, rowItem);
+    		} else {
+    			lapTable.appendChild(lapRow);
+    		}
+		};
+
+		function timer() {
+
+        	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+        	totalRunningTime+=10;
+        	ms+= 10;
+        	if(ms === 1000){
+	            s+=1;
+	            ms=0;
+	        }
+	        
+	        if(s==60){
+	            m+=1;
+	            s=0;
+	        }
+	    }
+
+	    function start(){
+	        if(started === false){
+	            document.getElementById("startbtn").innerHTML=" PAUSE ";
+	            interval=setInterval(timer,10);
+	            started = true;
+	        }
+	        else{
+	            clearInterval(interval);
+	            document.getElementById("startbtn").innerHTML=" RESUME ";
+	            started = false;
+	        }
+	    }
+
+	    function newLap(userComment="") {
+	    	if(started === true) {
+	    		let data_key = Date.now();
+	    		// ms = totalRunningTime;
+    			// s = ms/1000;
+    			// m = Math.floor(s/60);
+    			timecode = String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+	    		const rowData = {
+	    			totalRunningTime,
+	    			data_key,
+	    			newlap,
+	    			timecode,
+	    			userComment,
+	    			m,
+	    			s,
+	    			ms,
+	    			fps,
+	    			milli_to_FPS
+	    		};
+	    		console.log(JSON.stringify(rowData));
+	    		notesData.push(rowData);
+	    		localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
+
+	    		renderRow(rowData);
+
+	    		newlap += 1;
+	    	}
+	    }
+
+	    
+
+
+
+
+
+	</script>
+
+</body>
+</html>
