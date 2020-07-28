@@ -35,7 +35,7 @@
 	<button onclick="start()" id="startbtn"> START </button>
 	<button onclick="newLap()" id="newLap"> LAP </button>
 	<button onclick="reset()" id="resetbtn"> RESET </button>
-	<button onclick="download()" id="downloadButton"> SAVE DATA</button>
+	<button href="" onclick="download()" id="downloadButton" class="downloadButton" download="data.txt"> SAVE DATA</button>
 	<p></p>
 	<section id="lapssection">
 		<table id="lapTable" class="lapTable">
@@ -51,7 +51,7 @@
 
 		let notesData = [];
 
-		let m, s, ms, newlap, started, interval;
+		let m, s, ms, lapCount, started, interval;
 		let fps, milli_to_FPS
 		let totalRunningTime;
 
@@ -91,6 +91,12 @@
 		   	fps = timerData.fps;
 		   	milli_to_FPS = timerData.milli_to_FPS;
 		   	fpsBtn.innerHTML = "Current FPS: " + String(fps);
+		   	lapCount = tableData.length + 1
+	    	timecode = timerData.timecode;
+	    	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+	    	clearInterval(interval);
+	        document.getElementById("startbtn").innerHTML=" RESUME ";
+	        started = false;
 		  } else {
 		  	resetNotes();
 		  }
@@ -103,7 +109,7 @@
 			m = 0;
 			s = 0;
 			ms = 0;
-			newlap = 1;
+			lapCount = 1;
 			started = false;
 			fps = 29.97;
 			totalRunningTime = 0;
@@ -156,7 +162,7 @@
 	        	rowData = notesData[i];
 
 	        	let timecodeNew = String(rowData.m).padStart(2,'0')+":"+String(rowData.s).padStart(2,'0')+":"+String(Math.floor(rowData.ms/milli_to_FPS)).padStart(2,'0');
-	            const rowItem = document.querySelector(`[data-key='${rowData.data_key}']`);
+	            const rowItem = document.querySelector(`[data_key='${rowData.data_key}']`);
 	            if (rowItem) {
     				rowItem.cells[1].innerHTML = timecodeNew;
     			}
@@ -188,33 +194,42 @@
 
 		function renderRow(rowData) {
 			
-    		const rowItem = document.querySelector(`[data-key='${rowData.data_key}']`);
-			const fullTable = document.querySelector('lapTable');
+    		const rowItem = document.querySelector(`[data_key='${rowData.data_key}']`);
+			const fullTable = document.querySelector('#lapTable');
 
 			let lapRow = document.createElement("tr");
     		lapRow.setAttribute("class","lap");
-    		lapRow.setAttribute('data-key', rowData.data_key);
+    		lapRow.setAttribute('data_key', rowData.data_key);
     		lapRow.setAttribute('noteTime', rowData.totalRunningTime);
 
     		let lapNum = document.createElement("td");
-    		lapNum.setAttribute("class","#");
-    		lapNum.innerHTML = rowData.newlap;
+    		lapNum.setAttribute("class","num");
+    		lapNum.innerHTML = rowData.lapCount;
 
     		let lapLabel = document.createElement("td");
     		lapLabel.setAttribute("class","lapText");
+    		let lapLblTxt = document.createTextNode(rowData.timecode);
+    		lapLabel.appendChild(lapLblTxt);
 
     		let lapComment = document.createElement("td");
     		lapComment.setAttribute("class","lapComment");
     		lapComment.innerHTML = rowData.userComment;
 
+    		let deleteColumn = document.createElement("td");
+    		deleteColumn.setAttribute("class","deleteColumn");
 
-    		let lapLblTxt = document.createTextNode(rowData.timecode);
+    		let deleteButton = document.createElement("input");
+    		deleteButton.setAttribute("class","delete-button");
+    		deleteButton.setAttribute("type","button");
+    		deleteButton.setAttribute("value","Delete");
+    		deleteButton.setAttribute("onclick","deleteNote(this)")
 
-    		lapLabel.appendChild(lapLblTxt);
+    		deleteColumn.appendChild(deleteButton);
 
     		lapRow.appendChild(lapNum);
     		lapRow.appendChild(lapLabel);
     		lapRow.appendChild(lapComment);
+    		lapRow.appendChild(deleteColumn);
 
 			if (rowItem) {
     			fullTable.replaceChild(lapRow, rowItem);
@@ -253,16 +268,13 @@
 	    }
 
 	    function newLap(userComment="") {
-	    	if(started === true) {
+	    	// if(started === true) {
 	    		let data_key = Date.now();
-	    		// ms = totalRunningTime;
-    			// s = ms/1000;
-    			// m = Math.floor(s/60);
     			timecode = String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
 	    		const rowData = {
 	    			totalRunningTime,
 	    			data_key,
-	    			newlap,
+	    			lapCount,
 	    			timecode,
 	    			userComment,
 	    			m,
@@ -277,11 +289,136 @@
 
 	    		renderRow(rowData);
 
-	    		newlap += 1;
-	    	}
+	    		lapCount += 1;
+	    	// }
 	    }
 
+	    // const tableOfNotes = document.querySelector('#lapTable');
+	    // tableOfNotes.addEventListener('click', event => {
+	    // 	if (event.target.classList.contains("#delete-button")) {
+	    // 		const itemKey = event.target.parentElement.dataset.key;
+	    // 		deleteNote(itemKey);
+	    // 	}
+	    // });
+
+	    function deleteNote(key) {
+	    	// const index = notesData.findIndex(item => item.data_key === Number(key));
+	    	// const noteItem = {
+	    	// 	deleted: true,
+	    	// 	...notesData[index]
+	    	// };
+
+	    	var index = key.parentNode.parentNode.rowIndex;
+	    	console.log(String(index));
+	    	var keyToDelete = notesData[index-1].data_key
+	    	console.log(keyToDelete);
+	    	console.log("Deleting:" + notesData[index-1]);
+	    	document.getElementById("lapTable").deleteRow(index);
+
+	    	notesData = notesData.filter(item => item.data_key !== Number(keyToDelete));
+
+	    	if (notesData.length < 1) {
+	    		resetNotes();
+	    		return;
+	    	}
+
+	    	for(var i = 0; i < notesData.length; i++){
+	    		notesData[i].lapCount = i + 1
+	    		console.log(notesData[i].lapCount)
+	    	}
+
+	    	// console.log(JSON.stringify(notesData))
+
+	    	localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
+
+
+	    	lapCount = notesData.length + 1
+	    	var lastRow = notesData[notesData.length - 1];
+	    	totalRunningTime = lastRow.totalRunningTime;
+	    	m = lastRow.m;
+	    	s = lastRow.s;
+	    	ms = lastRow.ms;
+	    	fps = lastRow.fps;
+	    	milli_to_FPS = lastRow.milli_to_FPS;
+	    	timecode = lastRow.timecode;
+
+	    	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+
+	    	// document.getElementById("lapTable").deleteRow(index);
+
+	    	renderNotes(notesData);
+	    }
+
+
+
+	    // const notesTable = document.querySelector("#submit");
+
+	    let downloadUrl = null;
+	    let downloadBTN = document.querySelector(".downloadButton");
 	    
+
+	    function createText() {
+	    	let downloadText = "";
+	    	for(var i = 0; i < notesData.length; i++) {
+	    		var currentComment = "";
+	    		if (notesData[i].userComment.trim().length == 0) {
+	    			currentComment = "NO NOTE"
+	    		} else {
+	    			currentComment = notesData[i].userComment.trim();
+	    		}
+
+	    		if (i==0) {
+	    			downloadText += String(notesData[i].lapCount) + "\n" + String(notesData[i].timecode) + "\n" + String(currentComment);
+	    		} else {
+	    			downloadText += "\n\n" + String(notesData[i].lapCount) + "\n" + String(notesData[i].timecode) + "\n" + String(currentComment);
+	    		}
+	    	}
+	    	return downloadText;
+	    }
+
+	    function download() {
+	    	var a = document.createElement("a");
+	    	document.body.appendChild(a);
+	    	var curText = createText();
+	    	let file = new Blob([curText],{type: "text/plain;charset=utf-8"});
+	    	if (downloadUrl) {
+	    		URL.revokeObjectURL(downloadUrl);
+	    	};
+
+	    	downloadUrl = URL.createObjectURL(file);
+	    	// downloadBTN.setAttribute("href",downloadUrl);
+	    	a.setAttribute("href",downloadUrl);
+	    	a.setAttribute("target","_blank");
+	    	a.setAttribute("rel", "noopener noreferrer");
+
+	    	// a.href = downloadUrl;
+	    	a.click();
+
+	    	filenameID = "Timecode_Notes" + String(Date.now());
+
+	    	saveBlob(file,filenameID)
+	    	// causeDownload = window.URL.createObjectURL(file);
+	    	// a.href = causeDownload;
+	    	// a.click();
+	    	// window.URL.revokeObjectURL(file);
+
+	    }
+
+	    // CREDIT for this function that causes the same file to be shown in the browser to be downloaded instead:
+	    // Philip Stanislaus
+	    // https://gist.github.com/philipstanislaus/c7de1f43b52531001412
+	    var saveBlob = (function () {
+		    var a = document.createElement("a");
+		    document.body.appendChild(a);
+		    a.style = "display: none";
+		    return function (blob, fileName) {
+		        var url = window.URL.createObjectURL(blob);
+		        a.href = url;
+		        a.download = fileName;
+		        a.click();
+		        window.URL.revokeObjectURL(url);
+		    };
+		}());
 
 
 
