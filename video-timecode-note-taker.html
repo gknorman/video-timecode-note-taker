@@ -3,6 +3,14 @@
 <head>
 	<title></title>
 	<style type="text/css">
+
+		html {
+		  box-sizing: border-box;
+		}
+		*, *:before, *:after {
+		  box-sizing: inherit;
+		}
+
 		table, th, td {
 		  border: 1px solid black;
 		  border-collapse: collapse;
@@ -13,21 +21,68 @@
 		th {
 		  text-align: left;
 		}
+
+		input[type=text], select, textarea{
+		  width: 100%;
+		  max-width: 60%;
+		  min-width: 15px;
+		  padding-left: 12px;
+		  padding-bottom: 10px;
+		  border: 1px solid #ccc;
+		  border-radius: 4px;
+		  box-sizing: border-box;
+		  resize: vertical;
+		}
+
+
 	</style>
+
+<!-- TO DO:
+
+Add filename input field
+Add CONFIRMATION for Reset Data! Move Reset to another location
+Research "Save As" popup on the Client Side without installing Node
+Add more buttons for logging typical "Flubs" and other errors
+Add Styling
+Research Keyboard shortcuts for Comments / Issues
+Refocus on Comments Input Field while counter is active -->
 
 
 </head>
 <body>
 	<label id="timer">Timecode: 00:00:00</label>
 	<p></p>
+
+	<div id="projectTitle">Project: Untitled Project</div>
+	<input type="text" name="inputTitle" id="inputTitle" placeholder="Enter a project title">
+	<input type="submit" value="Change Title" id="submit_title" onclick="changeHeading('title', document.getElementById('inputTitle').value)">
+	<p></p>
+
+	<div id="projectProducer">Producer: </div>
+	<input type="text" name="inputProducer" id="inputProducer" placeholder="Enter Producer's Name">
+	<input type="submit" value="Add Producer Name" id="submit_producer" onclick="changeHeading('producer', document.getElementById('inputProducer').value)">
+	<p></p>
+
+	<div id="projectTalent">Onscreen Talent: </div>
+	<input type="text" name="inputTalent" id="inputTalent" placeholder="Enter Talent's Name">
+	<input type="submit" value="Add Talent Name" id="submit_talent" onclick="changeHeading('talent', document.getElementById('inputTalent').value)">
+	<p></p>
+
+	<div id="projectDate">Project Date: </div>
+	<input type="text" name="inputDate" id="inputDate" placeholder="Enter a new Date">
+	<input type="submit" value="Change Date" id="submit_date" onclick="changeHeading('date', document.getElementById('inputDate').value)">
+	<p></p>
+
+	<p></p>
 	<div id="currentFPS">Current FPS: </div>
 	<!-- <label for="fps">Change FPS: </label> -->
+
 		<input type="number" name="fps" id="fps" placeholder="Enter new framerate">
 		<button onclick="changeFPS(document.getElementById('fps').value)"> UPDATE FPS </button>
 	<p></p>
 	<label for="comments">Comments:</label>
 <!-- 	<form> -->
-		<input type="text" id="comments" name="comments"><br />
+		<input type="text" id="comments" name="comments"><!-- <br /> -->
 		
 		<input type="submit" value="Submit" id="submit" onclick="newLap(document.getElementById('comments').value)">
 <!-- 	</form> -->
@@ -56,6 +111,51 @@
 		let totalRunningTime;
 
 		const comments = document.getElementById("comments");
+
+		let today = new Date();
+		document.getElementById('projectDate').innerHTML="Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear();
+
+		let projectHeading = {
+			"title": "Untitled Project",
+			"producer": "Unnamed Producer",
+			"talent" : "Unnamed Talent",
+			"date" : "Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear()
+		};
+
+		function changeHeading(key,value="") {
+
+			if (value.length > 0) {
+				projectHeading[key] = value;
+			}
+
+			localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
+
+			renderHeading();
+
+		}
+
+		function renderHeading() {
+			document.getElementById("projectTitle").innerHTML="Project: " + String(projectHeading["title"]);
+		  document.getElementById("projectProducer").innerHTML="Producer: " + String(projectHeading["producer"]);
+		  document.getElementById("projectTalent").innerHTML="Onscreen Talent: " + String(projectHeading["talent"]);
+		  document.getElementById("projectDate").innerHTML="Project Date: " + String(projectHeading["date"]);
+		}
+
+		function resetHeading() {
+			projectHeading = {
+			"title": "Untitled Project",
+			"producer": "Unnamed Producer",
+			"talent" : "Unnamed Talent",
+			"date" : "Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear()
+			};
+			console.log(projectHeading)
+			localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
+		}
+
+
+
+
+
 
 		comments.addEventListener("keyup", function(event) {
 			if (event.keyCode === 13) {
@@ -100,6 +200,22 @@
 		  } else {
 		  	resetNotes();
 		  }
+
+		  const details = localStorage.getItem('notesHeading');
+
+		  if (details) {
+		  	projectHeading = JSON.parse(details);
+		  	// for(var i = 0; i < details.length; i++) {
+		  	// 	projectHeading[i] = details[i]
+		  	// }
+		  	console.log(details)
+		  	localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
+		  } else {
+		  	resetHeading();
+		  }
+
+		  renderHeading();
+
 		});
 
 
@@ -131,6 +247,8 @@
 
 	        clearInterval(interval);
 	        resetNotes();
+	        resetHeading();
+	        renderHeading()
 	        
 	        // document.getElementById("timer").innerHTML="Timecode: 00:00:00";
     }
@@ -359,6 +477,10 @@
 
 	    function createText() {
 	    	let downloadText = "";
+
+	    	downloadText += "Project: " + String(projectHeading["title"]) + "\n" + "Producer: " + String(projectHeading["producer"]) + "\n" + "Onscreen Talent: " + String(projectHeading["talent"]) + "\n" + "Project Date: " + String(projectHeading["date"]) + "\n\n";
+
+
 	    	for(var i = 0; i < notesData.length; i++) {
 	    		var currentComment = "";
 	    		if (notesData[i].userComment.trim().length == 0) {
@@ -394,7 +516,14 @@
 	    	// a.href = downloadUrl;
 	    	a.click();
 
-	    	filenameID = "Timecode_Notes" + String(Date.now());
+	    	if (projectHeading["title"] !== "Untitled Project"){
+	    		var filenameID = String(projectHeading["title"])
+	    	} else {
+	    		var filenameID = "Timecode_Notes_"
+	    	}
+
+
+	    	filenameID += "__" + String(Date.now());
 
 	    	saveBlob(file,filenameID)
 	    	// causeDownload = window.URL.createObjectURL(file);
@@ -419,6 +548,7 @@
 		        window.URL.revokeObjectURL(url);
 		    };
 		}());
+
 
 
 
