@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	
+
 <!--
 TO DO:
 - Add CONFIRMATION for Reset Data! Move Reset to another location
@@ -10,6 +10,8 @@ TO DO:
 - Add more buttons for logging typical "Flubs" and other errors
 - Add Styling
 - Research Keyboard shortcuts for Comments / Issues
+- TROUBLESHOOT FPS updates when DELETING an item from the ROW
+
  -->
 
 	<title></title>
@@ -153,7 +155,7 @@ TO DO:
 			"title": "Untitled Project",
 			"producer": "Unnamed Producer",
 			"talent" : "Unnamed Talent",
-			"date" : "Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear()
+			"date" : ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear()
 			};
 
 			document.getElementById("inputTitle").value = "";
