@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
+	
+<!--
+TO DO:
+- Add CONFIRMATION for Reset Data! Move Reset to another location
+- Make COMMENTS rows EDITABLE
+- Research "Save As" popup on the Client Side without installing Node
+- Add more buttons for logging typical "Flubs" and other errors
+- Add Styling
+- Research Keyboard shortcuts for Comments / Issues
+ -->
+
 	<title></title>
 	<style type="text/css">
 
@@ -37,15 +48,6 @@
 
 	</style>
 
-<!-- TO DO:
-
-Add filename input field
-Add CONFIRMATION for Reset Data! Move Reset to another location
-Research "Save As" popup on the Client Side without installing Node
-Add more buttons for logging typical "Flubs" and other errors
-Add Styling
-Research Keyboard shortcuts for Comments / Issues
-Refocus on Comments Input Field while counter is active -->
 
 
 </head>
@@ -78,7 +80,7 @@ Refocus on Comments Input Field while counter is active -->
 	<!-- <label for="fps">Change FPS: </label> -->
 
 		<input type="number" name="fps" id="fps" placeholder="Enter new framerate">
-		<button onclick="changeFPS(document.getElementById('fps').value)"> UPDATE FPS </button>
+		<button id="updateFpsBtn" onclick="changeFPS(document.getElementById('fps').value)"> UPDATE FPS </button>
 	<p></p>
 	<label for="comments">Comments:</label>
 <!-- 	<form> -->
@@ -127,6 +129,11 @@ Refocus on Comments Input Field while counter is active -->
 			if (value.length > 0) {
 				projectHeading[key] = value;
 			}
+			// document.getElementById(`${key}`).value = "";
+			document.getElementById("inputTitle").value = "";
+			document.getElementById("inputProducer").value = "";
+			document.getElementById("inputTalent").value = "";
+			document.getElementById("inputDate").value = "";
 
 			localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
 
@@ -148,19 +155,64 @@ Refocus on Comments Input Field while counter is active -->
 			"talent" : "Unnamed Talent",
 			"date" : "Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear()
 			};
+
+			document.getElementById("inputTitle").value = "";
+			document.getElementById("inputProducer").value = "";
+			document.getElementById("inputTalent").value = "";
+			document.getElementById("inputDate").value = "";
+
 			console.log(projectHeading)
 			localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
 		}
 
+		const changeTitle = document.getElementById("inputTitle");
+		const changeProducer = document.getElementById("inputProducer");
+		const changeTalent = document.getElementById("inputTalent");
+		const changeDate = document.getElementById("inputDate");
 
+		changeTitle.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("submit_title").click("title",changeTitle.value);
+				document.getElementById("inputTitle").value = "";
+				document.getElementById("inputTitle").focus();
+			}
+		});
 
+		changeProducer.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("submit_producer").click("producer",changeProducer.value);
+				document.getElementById("inputProducer").value = "";
+				document.getElementById("inputProducer").focus();
+			}
+		});
 
+		changeTalent.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("submit_talent").click("talent",changeTalent.value);
+				document.getElementById("inputTalent").value = "";
+				document.getElementById("inputTalent").focus();
+			}
+		});
+
+		changeDate.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("submit_date").click("date",changeDate.value);
+				document.getElementById("inputDate").value = "";
+				document.getElementById("inputDate").focus();
+			}
+		});
 
 
 		comments.addEventListener("keyup", function(event) {
 			if (event.keyCode === 13) {
 				event.preventDefault();
 				document.getElementById("submit").click();
+				document.getElementById("comments").value = "";
+				document.getElementById("comments").focus();
 			}
 		});
 
@@ -179,7 +231,7 @@ Refocus on Comments Input Field while counter is active -->
 
 		document.addEventListener('DOMContentLoaded', () => {
 		  const ref = localStorage.getItem('notesItemsRef');
-		  if (ref) {
+		  if (ref.length > 0 && ref !== '[]') {
 		    tableData = JSON.parse(ref);
 		    notesData = tableData;
 		   	renderNotes(tableData);
@@ -197,6 +249,7 @@ Refocus on Comments Input Field while counter is active -->
 	    	clearInterval(interval);
 	        document.getElementById("startbtn").innerHTML=" RESUME ";
 	        started = false;
+	        console.log("Data loaded from localStorage")
 		  } else {
 		  	resetNotes();
 		  }
@@ -208,7 +261,7 @@ Refocus on Comments Input Field while counter is active -->
 		  	// for(var i = 0; i < details.length; i++) {
 		  	// 	projectHeading[i] = details[i]
 		  	// }
-		  	console.log(details)
+		  	// console.log(details)
 		  	localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
 		  } else {
 		  	resetHeading();
@@ -218,8 +271,6 @@ Refocus on Comments Input Field while counter is active -->
 
 		});
 
-
-		// Need to link reset() to here
 		function resetNotes() {
 			console.log("resetting notes");
 			m = 0;
@@ -233,6 +284,13 @@ Refocus on Comments Input Field while counter is active -->
 			fpsBtn.innerHTML = "Current FPS: " + String(fps);
 			document.getElementById("timer").innerHTML="Timecode: 00:00:00";
 			document.getElementById("startbtn").innerHTML=" START ";
+			document.getElementById("fps").value = "";
+			document.getElementById("comments").value = "";
+			notesData = [];
+			localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
+			// started = true;
+			// start();
+
 		}
 
 		function reset(){
@@ -252,6 +310,17 @@ Refocus on Comments Input Field while counter is active -->
 	        
 	        // document.getElementById("timer").innerHTML="Timecode: 00:00:00";
     }
+
+    	updateFps = document.getElementById("fps");
+
+    	updateFps.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("updateFpsBtn").click();
+				document.getElementById("fps").value = "";
+				document.getElementById("fps").focus();
+			}
+		});
 
 
 		function changeFPS(newFPS="") {
@@ -285,6 +354,8 @@ Refocus on Comments Input Field while counter is active -->
     				rowItem.cells[1].innerHTML = timecodeNew;
     			}
 	        }
+
+	        timer();
 	    }
 
 		function renderNotes(data=notesData) {
@@ -294,20 +365,15 @@ Refocus on Comments Input Field while counter is active -->
 			} else {
 				fps = 29.97;
 			}
-
 			fpsBtn.innerHTML = "Current FPS: " + String(fps);
-
 			if (data.length > 0) {
 				data.forEach(t => {
 				renderRow(t);
-				// notesData.push(rowData);
-		      	console.log("content loaded:",t);
+		      	// console.log("content loaded:",t);
 		    	})
 			} else {
 				resetNotes();
 			}
-
-		    // localStorage.setItem('notesItemsRef', JSON.stringify(tableData));
 		};
 
 		function renderRow(rowData) {
@@ -357,7 +423,6 @@ Refocus on Comments Input Field while counter is active -->
 		};
 
 		function timer() {
-
         	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
         	totalRunningTime+=10;
         	ms+= 10;
@@ -401,36 +466,23 @@ Refocus on Comments Input Field while counter is active -->
 	    			fps,
 	    			milli_to_FPS
 	    		};
-	    		console.log(JSON.stringify(rowData));
+	    		// console.log(JSON.stringify(rowData));
 	    		notesData.push(rowData);
 	    		localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
-
+	    		document.getElementById("comments").value = "";
+				document.getElementById("comments").focus();
 	    		renderRow(rowData);
-
 	    		lapCount += 1;
-	    	// }
 	    }
 
-	    // const tableOfNotes = document.querySelector('#lapTable');
-	    // tableOfNotes.addEventListener('click', event => {
-	    // 	if (event.target.classList.contains("#delete-button")) {
-	    // 		const itemKey = event.target.parentElement.dataset.key;
-	    // 		deleteNote(itemKey);
-	    // 	}
-	    // });
-
 	    function deleteNote(key) {
-	    	// const index = notesData.findIndex(item => item.data_key === Number(key));
-	    	// const noteItem = {
-	    	// 	deleted: true,
-	    	// 	...notesData[index]
-	    	// };
-
+	    	// Uncomment following line to pause timecode when a note is deleted:
+	    	// start();
 	    	var index = key.parentNode.parentNode.rowIndex;
-	    	console.log(String(index));
+	    	// console.log(String(index));
 	    	var keyToDelete = notesData[index-1].data_key
-	    	console.log(keyToDelete);
-	    	console.log("Deleting:" + notesData[index-1]);
+	    	// console.log(keyToDelete);
+	    	console.log("Deleting: \n\n" + JSON.stringify(notesData[index-1]));
 	    	document.getElementById("lapTable").deleteRow(index);
 
 	    	notesData = notesData.filter(item => item.data_key !== Number(keyToDelete));
@@ -442,13 +494,10 @@ Refocus on Comments Input Field while counter is active -->
 
 	    	for(var i = 0; i < notesData.length; i++){
 	    		notesData[i].lapCount = i + 1
-	    		console.log(notesData[i].lapCount)
+	    		// console.log(notesData[i].lapCount)
 	    	}
 
-	    	// console.log(JSON.stringify(notesData))
-
 	    	localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
-
 
 	    	lapCount = notesData.length + 1
 	    	var lastRow = notesData[notesData.length - 1];
@@ -462,14 +511,8 @@ Refocus on Comments Input Field while counter is active -->
 
 	    	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
 
-	    	// document.getElementById("lapTable").deleteRow(index);
-
 	    	renderNotes(notesData);
 	    }
-
-
-
-	    // const notesTable = document.querySelector("#submit");
 
 	    let downloadUrl = null;
 	    let downloadBTN = document.querySelector(".downloadButton");
@@ -478,7 +521,7 @@ Refocus on Comments Input Field while counter is active -->
 	    function createText() {
 	    	let downloadText = "";
 
-	    	downloadText += "Project: " + String(projectHeading["title"]) + "\n" + "Producer: " + String(projectHeading["producer"]) + "\n" + "Onscreen Talent: " + String(projectHeading["talent"]) + "\n" + "Project Date: " + String(projectHeading["date"]) + "\n\n";
+	    	downloadText += "Project: " + String(projectHeading["title"]) + "\n" + "Producer: " + String(projectHeading["producer"]) + "\n" + "Onscreen Talent: " + String(projectHeading["talent"]) + "\n" + "Project Date: " + String(projectHeading["date"]) + "\n\n\n\n";
 
 
 	    	for(var i = 0; i < notesData.length; i++) {
@@ -490,9 +533,9 @@ Refocus on Comments Input Field while counter is active -->
 	    		}
 
 	    		if (i==0) {
-	    			downloadText += String(notesData[i].lapCount) + "\n" + String(notesData[i].timecode) + "\n" + String(currentComment);
+	    			downloadText += String(notesData[i].lapCount) + "\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		} else {
-	    			downloadText += "\n\n" + String(notesData[i].lapCount) + "\n" + String(notesData[i].timecode) + "\n" + String(currentComment);
+	    			downloadText += "\n" + String(notesData[i].lapCount) + "\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		}
 	    	}
 	    	return downloadText;
@@ -508,12 +551,10 @@ Refocus on Comments Input Field while counter is active -->
 	    	};
 
 	    	downloadUrl = URL.createObjectURL(file);
-	    	// downloadBTN.setAttribute("href",downloadUrl);
 	    	a.setAttribute("href",downloadUrl);
 	    	a.setAttribute("target","_blank");
 	    	a.setAttribute("rel", "noopener noreferrer");
 
-	    	// a.href = downloadUrl;
 	    	a.click();
 
 	    	if (projectHeading["title"] !== "Untitled Project"){
@@ -522,15 +563,9 @@ Refocus on Comments Input Field while counter is active -->
 	    		var filenameID = "Timecode_Notes_"
 	    	}
 
-
 	    	filenameID += "__" + String(Date.now());
 
 	    	saveBlob(file,filenameID)
-	    	// causeDownload = window.URL.createObjectURL(file);
-	    	// a.href = causeDownload;
-	    	// a.click();
-	    	// window.URL.revokeObjectURL(file);
-
 	    }
 
 	    // CREDIT for this function that causes the same file to be shown in the browser to be downloaded instead:
@@ -548,11 +583,6 @@ Refocus on Comments Input Field while counter is active -->
 		        window.URL.revokeObjectURL(url);
 		    };
 		}());
-
-
-
-
-
 
 	</script>
 
