@@ -4,20 +4,19 @@
 
 <!--
 TO DO:
+- Add Table Headings to Saved Data
+- Add COLUMN for Video Title submissions
 - Add CONFIRMATION for Reset Data! Move Reset to another location
 - Make COMMENTS rows EDITABLE
 - COMMON Keywords
 - CAPTIONS File
 - ADD Lesson
-- ADD HOURS
 - Research "Save As" popup on the Client Side without installing Node
 - Add more buttons for logging typical "Flubs" and other errors
 - Add Styling
 - Research Keyboard shortcuts for Comments / Issues
-- TROUBLESHOOT FPS updates when DELETING an item from the ROW
 - Enter ALL VIDEO TITLES and turn them into buttons
 - CSV with all of the comments per VIDEO, as one row
-
  -->
 
 	<title></title>
@@ -108,7 +107,7 @@ TO DO:
 <!-- 	<form> -->
 		<input type="text" id="videoTitle" name="videoTitle"><!-- <br /> -->
 		
-		<input type="submit" value="Submit" id="submit" onclick="newTitle(document.getElementById('videoTitle').value)">
+		<input type="submit" value="Submit" id="submit_videoTitle" onclick="newTitle(document.getElementById('videoTitle').value)">
 	<p></p>
 	<button onclick="start()" id="startbtn"> START </button>
 	<button onclick="newLap()" id="newLap"> LAP </button>
@@ -119,6 +118,7 @@ TO DO:
 		<table id="lapTable" class="lapTable">
 			<tr id="lapHeader">
 				<th>#</th>
+				<th>Video Title</th>
 				<th>Timecode</th>
 				<th>Note</th>
 			</tr>
@@ -129,11 +129,20 @@ TO DO:
 
 		let notesData = [];
 
+		let notesTableHeaders = {
+			"numSymbol": "#",
+			"vidTitle": "Video Title",
+			"timecode": "Timecode",
+			"note": "Note"
+		}
+
 		let h, m, s, ms, lapCount, started, interval;
 		let fps, milli_to_FPS
 		let totalRunningTime;
 
 		const comments = document.getElementById("comments");
+		let videoTitleElement = document.getElementById("videoTitle");
+		let videoTitle = "";
 
 		let today = new Date();
 		document.getElementById('projectDate').innerHTML="Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear();
@@ -235,6 +244,15 @@ TO DO:
 				document.getElementById("submit").click();
 				document.getElementById("comments").value = "";
 				document.getElementById("comments").focus();
+			}
+		});
+
+		videoTitleElement.addEventListener("keyup", function(event) {
+			if (event.keyCode === 13) {
+				event.preventDefault();
+				document.getElementById("submit_videoTitle").click();
+				document.getElementById("videoTitle").value = "";
+				document.getElementById("videoTitle").focus();
 			}
 		});
 
@@ -403,7 +421,7 @@ TO DO:
 	        	let timecodeNew = String(rowData.h).padStart(2,'0')+":"+String(rowData.m).padStart(2,'0')+":"+String(rowData.s).padStart(2,'0')+":"+String(Math.floor(rowData.ms/milli_to_FPS)).padStart(2,'0');
 	            const rowItem = document.querySelector(`[data_key='${rowData.data_key}']`);
 	            if (rowItem) {
-    				rowItem.cells[1].innerHTML = timecodeNew;
+    				rowItem.cells[2].innerHTML = timecodeNew;
     			}
     			notesData[i].fps = fps;
     			notesData[i].milli_to_FPS = milli_to_FPS;
@@ -471,6 +489,7 @@ TO DO:
     		deleteColumn.appendChild(deleteButton);
 
     		lapRow.appendChild(lapNum);
+    		lapRow.appendChild(lapTitle)
     		lapRow.appendChild(lapLabel);
     		lapRow.appendChild(lapComment);
     		lapRow.appendChild(deleteColumn);
@@ -518,19 +537,24 @@ TO DO:
 	        }
 	    }
 
-	    function newTitle(videoTitle="") {
-
+	    function newTitle(videoTitleInput="") {
+	    	// console.log(videoTitle)
+	    	videoTitle = videoTitleInput;
 	    	newLap();
+	    	document.getElementById("videoTitle").value = "";
+	    	videoTitleElement = document.getElementById("videoTitle");
 	    }
 
 	    function newLap(userComment="") {
 	    	// if(started === true) {
 	    		let data_key = Date.now();
     			timecode = String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+
 	    		const rowData = {
 	    			totalRunningTime,
 	    			data_key,
 	    			lapCount,
+	    			videoTitle,
 	    			timecode,
 	    			userComment,
 	    			h,
@@ -593,11 +617,21 @@ TO DO:
 	    let downloadBTN = document.querySelector(".downloadButton");
 	    
 
+	 //    let notesTableHeaders = {
+		// 	"numSymbol": "#",
+		// 	"vidTitle": "Video Title",
+		// 	"timecode": "Timecode",
+		// 	"note": "Note"
+		// }
+
+
 	    function createText() {
 	    	let downloadText = "";
 
-	    	downloadText += "Project: " + String(projectHeading["title"]) + "\n" + "Producer: " + String(projectHeading["producer"]) + "\n" + "Onscreen Talent: " + String(projectHeading["talent"]) + "\n" + "Project Date: " + String(projectHeading["date"]) + "\n\n\n\n";
+	    	downloadText += "Project: " + String(projectHeading["title"]) + "\n" + "Producer: " + String(projectHeading["producer"]) + "\n" + "Onscreen Talent: " + String(projectHeading["talent"]) + "\n" + "Project Date: " + String(projectHeading["date"]) + "\n" + "FPS: " + String(fps) + "\n\n\n\n";
 
+
+	    	downloadText += String(notesTableHeaders["numSymbol"]) + "\t" + String(notesTableHeaders["vidTitle"]) + "\t" + String(notesTableHeaders["timecode"]) + "\t" + String(notesTableHeaders["note"]) + "\n\n"
 
 	    	for(var i = 0; i < notesData.length; i++) {
 	    		var currentComment = "";
@@ -608,9 +642,9 @@ TO DO:
 	    		}
 
 	    		if (i==0) {
-	    			downloadText += String(notesData[i].lapCount) + "\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
+	    			downloadText += String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle) + "\t\t" +String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		} else {
-	    			downloadText += "\n" + String(notesData[i].lapCount) + "\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
+	    			downloadText += "\n" + String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle) + "\t\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		}
 	    	}
 	    	return downloadText;
