@@ -6,11 +6,17 @@
 TO DO:
 - Add CONFIRMATION for Reset Data! Move Reset to another location
 - Make COMMENTS rows EDITABLE
+- COMMON Keywords
+- CAPTIONS File
+- ADD Lesson
+- ADD HOURS
 - Research "Save As" popup on the Client Side without installing Node
 - Add more buttons for logging typical "Flubs" and other errors
 - Add Styling
 - Research Keyboard shortcuts for Comments / Issues
 - TROUBLESHOOT FPS updates when DELETING an item from the ROW
+- Enter ALL VIDEO TITLES and turn them into buttons
+- CSV with all of the comments per VIDEO, as one row
 
  -->
 
@@ -56,6 +62,8 @@ TO DO:
 <body>
 	<label id="timer">Timecode: 00:00:00</label>
 	<p></p>
+	<button id="resetTimerBtn" onclick="resetTimer()">RESET TIMER</button>
+	<p></p>
 
 	<div id="projectTitle">Project: Untitled Project</div>
 	<input type="text" name="inputTitle" id="inputTitle" placeholder="Enter a project title">
@@ -83,6 +91,11 @@ TO DO:
 
 		<input type="number" name="fps" id="fps" placeholder="Enter new framerate">
 		<button id="updateFpsBtn" onclick="changeFPS(document.getElementById('fps').value)"> UPDATE FPS </button>
+	<div id="div_reset_headings">
+		<button id="resetHeadingBtn" onclick="resetHeading()">
+			RESET OVERALL PROJECT INFORMATION
+		</button>
+	</div>
 	<p></p>
 	<label for="comments">Comments:</label>
 <!-- 	<form> -->
@@ -91,9 +104,15 @@ TO DO:
 		<input type="submit" value="Submit" id="submit" onclick="newLap(document.getElementById('comments').value)">
 <!-- 	</form> -->
 	<p></p>
+	<label for="videoTitle">Video Title:</label>
+<!-- 	<form> -->
+		<input type="text" id="videoTitle" name="videoTitle"><!-- <br /> -->
+		
+		<input type="submit" value="Submit" id="submit" onclick="newTitle(document.getElementById('videoTitle').value)">
+	<p></p>
 	<button onclick="start()" id="startbtn"> START </button>
 	<button onclick="newLap()" id="newLap"> LAP </button>
-	<button onclick="reset()" id="resetbtn"> RESET </button>
+	<button onclick="reset()" id="resetbtn"> RESET NOTES </button>
 	<button href="" onclick="download()" id="downloadButton" class="downloadButton" download="data.txt"> SAVE DATA</button>
 	<p></p>
 	<section id="lapssection">
@@ -110,7 +129,7 @@ TO DO:
 
 		let notesData = [];
 
-		let m, s, ms, lapCount, started, interval;
+		let h, m, s, ms, lapCount, started, interval;
 		let fps, milli_to_FPS
 		let totalRunningTime;
 
@@ -165,6 +184,7 @@ TO DO:
 
 			console.log(projectHeading)
 			localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
+			renderHeading();
 		}
 
 		const changeTitle = document.getElementById("inputTitle");
@@ -233,21 +253,34 @@ TO DO:
 
 		document.addEventListener('DOMContentLoaded', () => {
 		  const ref = localStorage.getItem('notesItemsRef');
+		  const localFPS = localStorage.getItem('savedFPS');
+		  const localTimecode = localStorage.getItem("currentTime");
+
 		  if (ref.length > 0 && ref !== '[]') {
 		    tableData = JSON.parse(ref);
 		    notesData = tableData;
 		   	renderNotes(tableData);
 		   	timerData = tableData[tableData.length - 1];
+		   	h = timerData.h;
 		   	m = timerData.m;
 		   	s = timerData.s;
 		   	ms = timerData.ms;
 		   	totalRunningTime = timerData.totalRunningTime;
-		   	fps = timerData.fps;
+		   	if(localFPS) {
+		   		// fps = parseInt(localFPS, 10);
+		   		fps = Number(localFPS)
+		   	} else {
+		   		fps = timerData.fps;
+		   	}
 		   	milli_to_FPS = timerData.milli_to_FPS;
 		   	fpsBtn.innerHTML = "Current FPS: " + String(fps);
 		   	lapCount = tableData.length + 1
 	    	timecode = timerData.timecode;
-	    	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+	    	if (localTimecode) {
+	    		document.getElementById("timer").innerHTML="Timecode: "+localTimecode;
+	    	} else {
+	    		document.getElementById("timer").innerHTML="Timecode: "+String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+	    	}
 	    	clearInterval(interval);
 	        document.getElementById("startbtn").innerHTML=" RESUME ";
 	        started = false;
@@ -273,19 +306,36 @@ TO DO:
 
 		});
 
-		function resetNotes() {
-			console.log("resetting notes");
+		function resetTimer() {
+			h = 0;
 			m = 0;
 			s = 0;
 			ms = 0;
 			lapCount = 1;
 			started = false;
-			fps = 29.97;
 			totalRunningTime = 0;
 			milli_to_FPS = (1000/fps).toFixed(2);
-			fpsBtn.innerHTML = "Current FPS: " + String(fps);
-			document.getElementById("timer").innerHTML="Timecode: 00:00:00";
+			document.getElementById("timer").innerHTML="Timecode: 00:00:00:00";
 			document.getElementById("startbtn").innerHTML=" START ";
+			started = false;
+			clearInterval(interval);
+		}
+
+		function resetNotes() {
+			console.log("resetting notes");
+			// h = 0;
+			// m = 0;
+			// s = 0;
+			// ms = 0;
+			// lapCount = 1;
+			started = false;
+			fps = 29.97;
+			// totalRunningTime = 0;
+			// milli_to_FPS = (1000/fps).toFixed(2);
+			resetTimer()
+			fpsBtn.innerHTML = "Current FPS: " + String(fps);
+			// document.getElementById("timer").innerHTML="Timecode: 00:00:00:00";
+			// document.getElementById("startbtn").innerHTML=" START ";
 			document.getElementById("fps").value = "";
 			document.getElementById("comments").value = "";
 			notesData = [];
@@ -307,7 +357,7 @@ TO DO:
 
 	        clearInterval(interval);
 	        resetNotes();
-	        resetHeading();
+	        // resetHeading();
 	        renderHeading()
 	        
 	        // document.getElementById("timer").innerHTML="Timecode: 00:00:00";
@@ -350,12 +400,16 @@ TO DO:
 	        for(i=0; i<l; i+=1){
 	        	rowData = notesData[i];
 
-	        	let timecodeNew = String(rowData.m).padStart(2,'0')+":"+String(rowData.s).padStart(2,'0')+":"+String(Math.floor(rowData.ms/milli_to_FPS)).padStart(2,'0');
+	        	let timecodeNew = String(rowData.h).padStart(2,'0')+":"+String(rowData.m).padStart(2,'0')+":"+String(rowData.s).padStart(2,'0')+":"+String(Math.floor(rowData.ms/milli_to_FPS)).padStart(2,'0');
 	            const rowItem = document.querySelector(`[data_key='${rowData.data_key}']`);
 	            if (rowItem) {
     				rowItem.cells[1].innerHTML = timecodeNew;
     			}
+    			notesData[i].fps = fps;
+    			notesData[i].milli_to_FPS = milli_to_FPS;
+    			notesData[i].timecode = timecodeNew;
 	        }
+	        localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
 
 	        timer();
 	    }
@@ -397,6 +451,10 @@ TO DO:
     		let lapLblTxt = document.createTextNode(rowData.timecode);
     		lapLabel.appendChild(lapLblTxt);
 
+    		let lapTitle = document.createElement("td");
+    		lapTitle.setAttribute("class","lapVideoTitle");
+    		lapTitle.innerHTML = rowData.videoTitle;
+
     		let lapComment = document.createElement("td");
     		lapComment.setAttribute("class","lapComment");
     		lapComment.innerHTML = rowData.userComment;
@@ -425,7 +483,8 @@ TO DO:
 		};
 
 		function timer() {
-        	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+			timecodeNew = String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+        	document.getElementById("timer").innerHTML="Timecode: "+timecodeNew;
         	totalRunningTime+=10;
         	ms+= 10;
         	if(ms === 1000){
@@ -437,6 +496,13 @@ TO DO:
 	            m+=1;
 	            s=0;
 	        }
+
+	        if(m==60) {
+	        	h+= 1;
+	        	m=0;
+	        }
+
+	        localStorage.setItem("currentTime",timecodeNew)
 	    }
 
 	    function start(){
@@ -452,16 +518,22 @@ TO DO:
 	        }
 	    }
 
+	    function newTitle(videoTitle="") {
+
+	    	newLap();
+	    }
+
 	    function newLap(userComment="") {
 	    	// if(started === true) {
 	    		let data_key = Date.now();
-    			timecode = String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+    			timecode = String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
 	    		const rowData = {
 	    			totalRunningTime,
 	    			data_key,
 	    			lapCount,
 	    			timecode,
 	    			userComment,
+	    			h,
 	    			m,
 	    			s,
 	    			ms,
@@ -502,16 +574,17 @@ TO DO:
 	    	localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
 
 	    	lapCount = notesData.length + 1
-	    	var lastRow = notesData[notesData.length - 1];
-	    	totalRunningTime = lastRow.totalRunningTime;
-	    	m = lastRow.m;
-	    	s = lastRow.s;
-	    	ms = lastRow.ms;
-	    	fps = lastRow.fps;
-	    	milli_to_FPS = lastRow.milli_to_FPS;
-	    	timecode = lastRow.timecode;
+	    	// var lastRow = notesData[notesData.length - 1];
+	    	// totalRunningTime = lastRow.totalRunningTime;
+	    	// h = lastRow.h;
+	    	// m = lastRow.m;
+	    	// s = lastRow.s;
+	    	// ms = lastRow.ms;
+	    	// fps = lastRow.fps;
+	    	// milli_to_FPS = lastRow.milli_to_FPS;
+	    	// timecode = lastRow.timecode;
 
-	    	document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
+	    	// document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
 
 	    	renderNotes(notesData);
 	    }
