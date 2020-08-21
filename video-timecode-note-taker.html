@@ -3,20 +3,26 @@
 <head>
 
 <!--
+
+UPDATES TO COMMIT:
+08/21/20
+- padEnd on video titles when saving data to 50 chars, " " to create better formatted output
+- updated adding Video Title function so that the videoTitle string is reset back to "" with each submission, to prevent the video title printing on each row whenever a new comment is submitted
+- ADDED a confirmation dialog box for the "reset notes" button
+
 TO DO:
-- Add Table Headings to Saved Data
-- Add COLUMN for Video Title submissions
+- Fix bug, timer loads old timecode even when comments show 00:00
 - Add CONFIRMATION for Reset Data! Move Reset to another location
 - Make COMMENTS rows EDITABLE
 - COMMON Keywords
 - CAPTIONS File
-- ADD Lesson
 - Research "Save As" popup on the Client Side without installing Node
 - Add more buttons for logging typical "Flubs" and other errors
 - Add Styling
 - Research Keyboard shortcuts for Comments / Issues
 - Enter ALL VIDEO TITLES and turn them into buttons
 - CSV with all of the comments per VIDEO, as one row
+- ADD Lesson?
  -->
 
 	<title></title>
@@ -300,7 +306,11 @@ TO DO:
 	    		document.getElementById("timer").innerHTML="Timecode: "+String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
 	    	}
 	    	clearInterval(interval);
-	        document.getElementById("startbtn").innerHTML=" RESUME ";
+	    	if (localTimecode === "00:00:00:00") {
+	    		document.getElementById("startbtn").innerHTML=" START ";
+	    	} else {
+	    		document.getElementById("startbtn").innerHTML=" RESUME ";
+	    	}
 	        started = false;
 	        console.log("Data loaded from localStorage")
 		  } else {
@@ -337,6 +347,8 @@ TO DO:
 			document.getElementById("startbtn").innerHTML=" START ";
 			started = false;
 			clearInterval(interval);
+			let timecodeNew = "00:00:00:00"
+			localStorage.setItem("currentTime",timecodeNew)
 		}
 
 		function resetNotes() {
@@ -364,19 +376,22 @@ TO DO:
 		}
 
 		function reset(){
-	        let lapsarr=document.getElementById("lapTable").getElementsByClassName("lap");
-	        let l=lapsarr.length;
-	        // var ps=lapssect.getElementsByTagName("p");
-	        for(i=0; i<l; i+=1){
-	            lapTable.removeChild(lapsarr[0]);
-	        }
-	        notesData = [];
-	        localStorage.removeItem('notesItemsRef');
+			var userReset = confirm("Reset Notes?")
+			if (userReset == true) {
+				let lapsarr=document.getElementById("lapTable").getElementsByClassName("lap");
+		        let l=lapsarr.length;
+		        // var ps=lapssect.getElementsByTagName("p");
+		        for(i=0; i<l; i+=1){
+		            lapTable.removeChild(lapsarr[0]);
+		        }
+		        notesData = [];
+		        localStorage.removeItem('notesItemsRef');
 
-	        clearInterval(interval);
-	        resetNotes();
-	        // resetHeading();
-	        renderHeading()
+		        clearInterval(interval);
+		        resetNotes();
+		        // resetHeading();
+		        renderHeading()
+			}
 	        
 	        // document.getElementById("timer").innerHTML="Timecode: 00:00:00";
     }
@@ -542,7 +557,9 @@ TO DO:
 	    	videoTitle = videoTitleInput;
 	    	newLap();
 	    	document.getElementById("videoTitle").value = "";
-	    	videoTitleElement = document.getElementById("videoTitle");
+	    	// videoTitleElement = document.getElementById("videoTitle");
+	    	videoTitle = "";
+	    	document.getElementById("videoTitle").focus();
 	    }
 
 	    function newLap(userComment="") {
@@ -631,7 +648,7 @@ TO DO:
 	    	downloadText += "Project: " + String(projectHeading["title"]) + "\n" + "Producer: " + String(projectHeading["producer"]) + "\n" + "Onscreen Talent: " + String(projectHeading["talent"]) + "\n" + "Project Date: " + String(projectHeading["date"]) + "\n" + "FPS: " + String(fps) + "\n\n\n\n";
 
 
-	    	downloadText += String(notesTableHeaders["numSymbol"]) + "\t" + String(notesTableHeaders["vidTitle"]) + "\t" + String(notesTableHeaders["timecode"]) + "\t" + String(notesTableHeaders["note"]) + "\n\n"
+	    	downloadText += String(notesTableHeaders["numSymbol"]) + "\t" + String(notesTableHeaders["vidTitle"]).padEnd(50," ") + "\t" + String(notesTableHeaders["timecode"]) + "\t" + String(notesTableHeaders["note"]) + "\n\n"
 
 	    	for(var i = 0; i < notesData.length; i++) {
 	    		var currentComment = "";
@@ -642,9 +659,9 @@ TO DO:
 	    		}
 
 	    		if (i==0) {
-	    			downloadText += String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle) + "\t\t" +String(notesData[i].timecode) + "\t" + String(currentComment);
+	    			downloadText += String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle).padEnd(50," ") + "\t" +String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		} else {
-	    			downloadText += "\n" + String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle) + "\t\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
+	    			downloadText += "\n" + String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle).padEnd(50," ") + "\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		}
 	    	}
 	    	return downloadText;
