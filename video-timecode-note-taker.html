@@ -3,15 +3,40 @@
 <head>
 
 <!--
-
-UPDATES TO COMMIT:
+UPDATES:
 08/21/20
 - padEnd on video titles when saving data to 50 chars, " " to create better formatted output
 - updated adding Video Title function so that the videoTitle string is reset back to "" with each submission, to prevent the video title printing on each row whenever a new comment is submitted
 - ADDED a confirmation dialog box for the "reset notes" button
 
 TO DO:
+- ADD an anchor 00:00 in the SRT to start the SRT CLIP
+	- Test the new features during Student Stories, Non-Production
+
+	If Ready by Monday - Git Branch with the new SRT feature that can be shared for Testing
+
+
+
+- REMOVE One input field
+- TWO Buttons to export as SRT and MARKER XML
+- Reverse Order Function - ala https://www.timeanddate.com/stopwatch/
+- Scrollable Window 
+- Video Titles can just be input as a NOTE
+- RESTARTS SLIDE - SPECIFIC buttons for the SPECIFIC Content ELements
+	- like REDO SLIDE: - Can go back and enter the # of the slide later
+	- Drop Down FOR SLIDE
+	- Manually enter a timecode - can resort itself
+
+- We won't need to work in the COURSE OUTLINE with the time code app
+- CM's have to do a better job of keeping the OUTLINE up to date
+- CM's can use the APP and overlay their own Notes
+- GUI needs to be super friendly
+
+
+- Fix bug where timecode doesn't advance when other window is in focus?
+- Fix Bug where Comment # over 100 goes back to 1
 - Fix bug, timer loads old timecode even when comments show 00:00
+- Fix a bug, FPS defaults back to 29.97 unexpectedly on certain resets and page reloads
 - Add CONFIRMATION for Reset Data! Move Reset to another location
 - Make COMMENTS rows EDITABLE
 - COMMON Keywords
@@ -22,54 +47,15 @@ TO DO:
 - Research Keyboard shortcuts for Comments / Issues
 - Enter ALL VIDEO TITLES and turn them into buttons
 - CSV with all of the comments per VIDEO, as one row
-- ADD Lesson?
+- ADD Lesson
  -->
 
 	<title></title>
-	<style type="text/css">
-
-		html {
-		  box-sizing: border-box;
-		}
-		*, *:before, *:after {
-		  box-sizing: inherit;
-		}
-
-		table, th, td {
-		  border: 1px solid black;
-		  border-collapse: collapse;
-		}
-		th {
-		  padding: 5px 15px 5px 15px;
-		}
-		th {
-		  text-align: left;
-		}
-
-		input[type=text], select, textarea{
-		  width: 100%;
-		  max-width: 60%;
-		  min-width: 15px;
-		  padding-left: 12px;
-		  padding-bottom: 10px;
-		  border: 1px solid #ccc;
-		  border-radius: 4px;
-		  box-sizing: border-box;
-		  resize: vertical;
-		}
-		
-		#timer {
-			font-size: 2rem;
-		}
-
-
-	</style>
-
-
+	<link rel="stylesheet" type="text/css" href="styles/timecode-style.css">
 
 </head>
 <body>
-	<label id="timer">Timecode: 00:00:00</label>
+	<label id="timer">Timecode: 00:00:00,00</label>
 	<p></p>
 	<button id="resetTimerBtn" onclick="resetTimer()">RESET TIMER</button>
 	<p></p>
@@ -113,526 +99,45 @@ TO DO:
 		<input type="submit" value="Submit" id="submit" onclick="newLap(document.getElementById('comments').value)">
 <!-- 	</form> -->
 	<p></p>
-	<label for="videoTitle">Video Title:</label>
+	<!-- <label for="videoTitle">Video Title:</label> -->
 <!-- 	<form> -->
-		<input type="text" id="videoTitle" name="videoTitle"><!-- <br /> -->
+<!-- 		<input type="text" id="videoTitle" name="videoTitle"><br />
 		
-		<input type="submit" value="Submit" id="submit_videoTitle" onclick="newTitle(document.getElementById('videoTitle').value)">
+		<input type="submit" value="Submit" id="submit_videoTitle" onclick="newTitle(document.getElementById('videoTitle').value)"> -->
 	<p></p>
 	<button onclick="start()" id="startbtn"> START </button>
-	<button onclick="newLap()" id="newLap"> LAP </button>
 	<button onclick="reset()" id="resetbtn"> RESET NOTES </button>
-	<button href="" onclick="download()" id="downloadButton" class="downloadButton" download="data.txt"> SAVE DATA</button>
+	<button href="" onclick="downloadTXT()" id="downloadButton" class="downloadButton" download="data.txt"> SAVE as TEXT</button>
+	<button href="" onclick="downloadSRT()" id="downloadButton" class="downloadButton" download="data.txt"> SAVE as SRT</button>
 	<p></p>
 	<section id="lapssection">
 		<table id="lapTable" class="lapTable">
 			<tr id="lapHeader">
 				<th>#</th>
-				<th>Video Title</th>
+				<!-- <th>Video Title</th> -->
 				<th>Timecode</th>
 				<th>Note</th>
 			</tr>
 		</table>
 	</section>
 
+	<script type="text/javascript" src="scripts/Heading.js"></script>
+	<script type="text/javascript" src="scripts/Tablenotes.js"></script>
+	<script type="text/javascript" src="scripts/Timer.js"></script>
+	<script type="text/javascript" src="scripts/timecode-setup-functions.js"></script>
+	<script type="text/javascript" src="scripts/timecode-event-listeners.js"></script>
+	<script type="text/javascript" src="scripts/timecode-local-storage.js"></script>
+	
+
+
 	<script type="text/javascript">
 
-		let notesData = [];
-
-		let notesTableHeaders = {
-			"numSymbol": "#",
-			"vidTitle": "Video Title",
-			"timecode": "Timecode",
-			"note": "Note"
-		}
-
-		let h, m, s, ms, lapCount, started, interval;
-		let fps, milli_to_FPS
-		let totalRunningTime;
-
-		const comments = document.getElementById("comments");
-		let videoTitleElement = document.getElementById("videoTitle");
-		let videoTitle = "";
-
-		let today = new Date();
-		document.getElementById('projectDate').innerHTML="Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear();
-
-		let projectHeading = {
-			"title": "Untitled Project",
-			"producer": "Unnamed Producer",
-			"talent" : "Unnamed Talent",
-			"date" : "Date: " + ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear()
-		};
-
-		function changeHeading(key,value="") {
-
-			if (value.length > 0) {
-				projectHeading[key] = value;
-			}
-			// document.getElementById(`${key}`).value = "";
-			document.getElementById("inputTitle").value = "";
-			document.getElementById("inputProducer").value = "";
-			document.getElementById("inputTalent").value = "";
-			document.getElementById("inputDate").value = "";
-
-			localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
-
-			renderHeading();
-
-		}
-
-		function renderHeading() {
-			document.getElementById("projectTitle").innerHTML="Project: " + String(projectHeading["title"]);
-		  document.getElementById("projectProducer").innerHTML="Producer: " + String(projectHeading["producer"]);
-		  document.getElementById("projectTalent").innerHTML="Onscreen Talent: " + String(projectHeading["talent"]);
-		  document.getElementById("projectDate").innerHTML="Project Date: " + String(projectHeading["date"]);
-		}
-
-		function resetHeading() {
-			projectHeading = {
-			"title": "Untitled Project",
-			"producer": "Unnamed Producer",
-			"talent" : "Unnamed Talent",
-			"date" : ('0' + (today.getMonth() + 1)).slice(-2) + "/" +  ('0' + today.getDate()).slice(-2) + "/" + today.getFullYear()
-			};
-
-			document.getElementById("inputTitle").value = "";
-			document.getElementById("inputProducer").value = "";
-			document.getElementById("inputTalent").value = "";
-			document.getElementById("inputDate").value = "";
-
-			console.log(projectHeading)
-			localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
-			renderHeading();
-		}
-
-		const changeTitle = document.getElementById("inputTitle");
-		const changeProducer = document.getElementById("inputProducer");
-		const changeTalent = document.getElementById("inputTalent");
-		const changeDate = document.getElementById("inputDate");
-
-		changeTitle.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("submit_title").click("title",changeTitle.value);
-				document.getElementById("inputTitle").value = "";
-				document.getElementById("inputTitle").focus();
-			}
-		});
-
-		changeProducer.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("submit_producer").click("producer",changeProducer.value);
-				document.getElementById("inputProducer").value = "";
-				document.getElementById("inputProducer").focus();
-			}
-		});
-
-		changeTalent.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("submit_talent").click("talent",changeTalent.value);
-				document.getElementById("inputTalent").value = "";
-				document.getElementById("inputTalent").focus();
-			}
-		});
-
-		changeDate.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("submit_date").click("date",changeDate.value);
-				document.getElementById("inputDate").value = "";
-				document.getElementById("inputDate").focus();
-			}
-		});
 
 
-		comments.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("submit").click();
-				document.getElementById("comments").value = "";
-				document.getElementById("comments").focus();
-			}
-		});
-
-		videoTitleElement.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("submit_videoTitle").click();
-				document.getElementById("videoTitle").value = "";
-				document.getElementById("videoTitle").focus();
-			}
-		});
 
 
-		const startbtn = document.getElementById("startbtn");
-		const resetbtn = document.getElementById("resetbtn");
 
-		const lapbtn = document.getElementById("newLap");
-		const lapssect = document.getElementById("lapssection");
-		const lapTable = document.getElementById("lapTable");
-		const fpsBtn = document.getElementById("currentFPS");
-		fpsBtn.innerHTML = "Current FPS: " + String(fps);
 	    
-	    // var milli_to_FPS = (1000/fps).toFixed(2);
-
-
-		document.addEventListener('DOMContentLoaded', () => {
-		  const ref = localStorage.getItem('notesItemsRef');
-		  const localFPS = localStorage.getItem('savedFPS');
-		  const localTimecode = localStorage.getItem("currentTime");
-
-		  if (ref.length > 0 && ref !== '[]') {
-		    tableData = JSON.parse(ref);
-		    notesData = tableData;
-		   	renderNotes(tableData);
-		   	timerData = tableData[tableData.length - 1];
-		   	h = timerData.h;
-		   	m = timerData.m;
-		   	s = timerData.s;
-		   	ms = timerData.ms;
-		   	totalRunningTime = timerData.totalRunningTime;
-		   	if(localFPS) {
-		   		// fps = parseInt(localFPS, 10);
-		   		fps = Number(localFPS)
-		   	} else {
-		   		fps = timerData.fps;
-		   	}
-		   	milli_to_FPS = timerData.milli_to_FPS;
-		   	fpsBtn.innerHTML = "Current FPS: " + String(fps);
-		   	lapCount = tableData.length + 1
-	    	timecode = timerData.timecode;
-	    	if (localTimecode) {
-	    		document.getElementById("timer").innerHTML="Timecode: "+localTimecode;
-	    	} else {
-	    		document.getElementById("timer").innerHTML="Timecode: "+String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
-	    	}
-	    	clearInterval(interval);
-	    	if (localTimecode === "00:00:00:00") {
-	    		document.getElementById("startbtn").innerHTML=" START ";
-	    	} else {
-	    		document.getElementById("startbtn").innerHTML=" RESUME ";
-	    	}
-	        started = false;
-	        console.log("Data loaded from localStorage")
-		  } else {
-		  	resetNotes();
-		  }
-
-		  const details = localStorage.getItem('notesHeading');
-
-		  if (details) {
-		  	projectHeading = JSON.parse(details);
-		  	// for(var i = 0; i < details.length; i++) {
-		  	// 	projectHeading[i] = details[i]
-		  	// }
-		  	// console.log(details)
-		  	localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
-		  } else {
-		  	resetHeading();
-		  }
-
-		  renderHeading();
-
-		});
-
-		function resetTimer() {
-			h = 0;
-			m = 0;
-			s = 0;
-			ms = 0;
-			lapCount = 1;
-			started = false;
-			totalRunningTime = 0;
-			milli_to_FPS = (1000/fps).toFixed(2);
-			document.getElementById("timer").innerHTML="Timecode: 00:00:00:00";
-			document.getElementById("startbtn").innerHTML=" START ";
-			started = false;
-			clearInterval(interval);
-			let timecodeNew = "00:00:00:00"
-			localStorage.setItem("currentTime",timecodeNew)
-		}
-
-		function resetNotes() {
-			console.log("resetting notes");
-			// h = 0;
-			// m = 0;
-			// s = 0;
-			// ms = 0;
-			// lapCount = 1;
-			started = false;
-			fps = 29.97;
-			// totalRunningTime = 0;
-			// milli_to_FPS = (1000/fps).toFixed(2);
-			resetTimer()
-			fpsBtn.innerHTML = "Current FPS: " + String(fps);
-			// document.getElementById("timer").innerHTML="Timecode: 00:00:00:00";
-			// document.getElementById("startbtn").innerHTML=" START ";
-			document.getElementById("fps").value = "";
-			document.getElementById("comments").value = "";
-			notesData = [];
-			localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
-			// started = true;
-			// start();
-
-		}
-
-		function reset(){
-			var userReset = confirm("Reset Notes?")
-			if (userReset == true) {
-				let lapsarr=document.getElementById("lapTable").getElementsByClassName("lap");
-		        let l=lapsarr.length;
-		        // var ps=lapssect.getElementsByTagName("p");
-		        for(i=0; i<l; i+=1){
-		            lapTable.removeChild(lapsarr[0]);
-		        }
-		        notesData = [];
-		        localStorage.removeItem('notesItemsRef');
-
-		        clearInterval(interval);
-		        resetNotes();
-		        // resetHeading();
-		        renderHeading()
-			}
-	        
-	        // document.getElementById("timer").innerHTML="Timecode: 00:00:00";
-    }
-
-    	updateFps = document.getElementById("fps");
-
-    	updateFps.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("updateFpsBtn").click();
-				document.getElementById("fps").value = "";
-				document.getElementById("fps").focus();
-			}
-		});
-
-
-		function changeFPS(newFPS="") {
-	    	if (newFPS) {
-	    		fps = newFPS;
-	    		fpsBtn.innerHTML = "Current FPS: " + String(fps);
-	    		milli_to_FPS = (1000/fps).toFixed(2);
-	    	} else {
-	    		fps = 29.97;
-	    		fpsBtn.innerHTML = "Current FPS: " + String(fps);
-	    		milli_to_FPS = (1000/fps).toFixed(2);
-	    	}
-	    	fpsBtn.innerHTML = "Current FPS: " + String(fps);
-	    	localStorage.setItem('savedFPS',fps);
-	    	if (notesData.length > 0) {
-	    		replaceTimecode();
-	    	}
-	    }
-
-	    function replaceTimecode() {
-	    	let lapsarr=document.getElementById("lapTable").getElementsByClassName("lap");
-	        let l=lapsarr.length;
-	        // var ps=lapssect.getElementsByTagName("p");
-			// const fullTable = document.querySelector('lapTable');
-	        for(i=0; i<l; i+=1){
-	        	rowData = notesData[i];
-
-	        	let timecodeNew = String(rowData.h).padStart(2,'0')+":"+String(rowData.m).padStart(2,'0')+":"+String(rowData.s).padStart(2,'0')+":"+String(Math.floor(rowData.ms/milli_to_FPS)).padStart(2,'0');
-	            const rowItem = document.querySelector(`[data_key='${rowData.data_key}']`);
-	            if (rowItem) {
-    				rowItem.cells[2].innerHTML = timecodeNew;
-    			}
-    			notesData[i].fps = fps;
-    			notesData[i].milli_to_FPS = milli_to_FPS;
-    			notesData[i].timecode = timecodeNew;
-	        }
-	        localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
-
-	        timer();
-	    }
-
-		function renderNotes(data=notesData) {
-			const savedFPS = localStorage.getItem('savedFPS');
-			if (savedFPS) {
-				fps = savedFPS;
-			} else {
-				fps = 29.97;
-			}
-			fpsBtn.innerHTML = "Current FPS: " + String(fps);
-			if (data.length > 0) {
-				data.forEach(t => {
-				renderRow(t);
-		      	// console.log("content loaded:",t);
-		    	})
-			} else {
-				resetNotes();
-			}
-		};
-
-		function renderRow(rowData) {
-			
-    		const rowItem = document.querySelector(`[data_key='${rowData.data_key}']`);
-			const fullTable = document.querySelector('#lapTable');
-
-			let lapRow = document.createElement("tr");
-    		lapRow.setAttribute("class","lap");
-    		lapRow.setAttribute('data_key', rowData.data_key);
-    		lapRow.setAttribute('noteTime', rowData.totalRunningTime);
-
-    		let lapNum = document.createElement("td");
-    		lapNum.setAttribute("class","num");
-    		lapNum.innerHTML = rowData.lapCount;
-
-    		let lapLabel = document.createElement("td");
-    		lapLabel.setAttribute("class","lapText");
-    		let lapLblTxt = document.createTextNode(rowData.timecode);
-    		lapLabel.appendChild(lapLblTxt);
-
-    		let lapTitle = document.createElement("td");
-    		lapTitle.setAttribute("class","lapVideoTitle");
-    		lapTitle.innerHTML = rowData.videoTitle;
-
-    		let lapComment = document.createElement("td");
-    		lapComment.setAttribute("class","lapComment");
-    		lapComment.innerHTML = rowData.userComment;
-
-    		let deleteColumn = document.createElement("td");
-    		deleteColumn.setAttribute("class","deleteColumn");
-
-    		let deleteButton = document.createElement("input");
-    		deleteButton.setAttribute("class","delete-button");
-    		deleteButton.setAttribute("type","button");
-    		deleteButton.setAttribute("value","Delete");
-    		deleteButton.setAttribute("onclick","deleteNote(this)")
-
-    		deleteColumn.appendChild(deleteButton);
-
-    		lapRow.appendChild(lapNum);
-    		lapRow.appendChild(lapTitle)
-    		lapRow.appendChild(lapLabel);
-    		lapRow.appendChild(lapComment);
-    		lapRow.appendChild(deleteColumn);
-
-			if (rowItem) {
-    			fullTable.replaceChild(lapRow, rowItem);
-    		} else {
-    			lapTable.appendChild(lapRow);
-    		}
-		};
-
-		function timer() {
-			timecodeNew = String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
-        	document.getElementById("timer").innerHTML="Timecode: "+timecodeNew;
-        	totalRunningTime+=10;
-        	ms+= 10;
-        	if(ms === 1000){
-	            s+=1;
-	            ms=0;
-	        }
-	        
-	        if(s==60){
-	            m+=1;
-	            s=0;
-	        }
-
-	        if(m==60) {
-	        	h+= 1;
-	        	m=0;
-	        }
-
-	        localStorage.setItem("currentTime",timecodeNew)
-	    }
-
-	    function start(){
-	        if(started === false){
-	            document.getElementById("startbtn").innerHTML=" PAUSE ";
-	            interval=setInterval(timer,10);
-	            started = true;
-	        }
-	        else{
-	            clearInterval(interval);
-	            document.getElementById("startbtn").innerHTML=" RESUME ";
-	            started = false;
-	        }
-	    }
-
-	    function newTitle(videoTitleInput="") {
-	    	// console.log(videoTitle)
-	    	videoTitle = videoTitleInput;
-	    	newLap();
-	    	document.getElementById("videoTitle").value = "";
-	    	// videoTitleElement = document.getElementById("videoTitle");
-	    	videoTitle = "";
-	    	document.getElementById("videoTitle").focus();
-	    }
-
-	    function newLap(userComment="") {
-	    	// if(started === true) {
-	    		let data_key = Date.now();
-    			timecode = String(h).padStart(2,'0')+":"+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
-
-	    		const rowData = {
-	    			totalRunningTime,
-	    			data_key,
-	    			lapCount,
-	    			videoTitle,
-	    			timecode,
-	    			userComment,
-	    			h,
-	    			m,
-	    			s,
-	    			ms,
-	    			fps,
-	    			milli_to_FPS
-	    		};
-	    		// console.log(JSON.stringify(rowData));
-	    		notesData.push(rowData);
-	    		localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
-	    		document.getElementById("comments").value = "";
-				document.getElementById("comments").focus();
-	    		renderRow(rowData);
-	    		lapCount += 1;
-	    }
-
-	    function deleteNote(key) {
-	    	// Uncomment following line to pause timecode when a note is deleted:
-	    	// start();
-	    	var index = key.parentNode.parentNode.rowIndex;
-	    	// console.log(String(index));
-	    	var keyToDelete = notesData[index-1].data_key
-	    	// console.log(keyToDelete);
-	    	console.log("Deleting: \n\n" + JSON.stringify(notesData[index-1]));
-	    	document.getElementById("lapTable").deleteRow(index);
-
-	    	notesData = notesData.filter(item => item.data_key !== Number(keyToDelete));
-
-	    	if (notesData.length < 1) {
-	    		resetNotes();
-	    		return;
-	    	}
-
-	    	for(var i = 0; i < notesData.length; i++){
-	    		notesData[i].lapCount = i + 1
-	    		// console.log(notesData[i].lapCount)
-	    	}
-
-	    	localStorage.setItem('notesItemsRef', JSON.stringify(notesData));
-
-	    	lapCount = notesData.length + 1
-	    	// var lastRow = notesData[notesData.length - 1];
-	    	// totalRunningTime = lastRow.totalRunningTime;
-	    	// h = lastRow.h;
-	    	// m = lastRow.m;
-	    	// s = lastRow.s;
-	    	// ms = lastRow.ms;
-	    	// fps = lastRow.fps;
-	    	// milli_to_FPS = lastRow.milli_to_FPS;
-	    	// timecode = lastRow.timecode;
-
-	    	// document.getElementById("timer").innerHTML="Timecode: "+String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')+":"+String(Math.floor(ms/milli_to_FPS)).padStart(2,'0');
-
-	    	renderNotes(notesData);
-	    }
 
 	    let downloadUrl = null;
 	    let downloadBTN = document.querySelector(".downloadButton");
@@ -652,7 +157,7 @@ TO DO:
 	    	downloadText += "Project: " + String(projectHeading["title"]) + "\n" + "Producer: " + String(projectHeading["producer"]) + "\n" + "Onscreen Talent: " + String(projectHeading["talent"]) + "\n" + "Project Date: " + String(projectHeading["date"]) + "\n" + "FPS: " + String(fps) + "\n\n\n\n";
 
 
-	    	downloadText += String(notesTableHeaders["numSymbol"]) + "\t" + String(notesTableHeaders["vidTitle"]).padEnd(50," ") + "\t" + String(notesTableHeaders["timecode"]) + "\t" + String(notesTableHeaders["note"]) + "\n\n"
+	    	downloadText += String(notesTableHeaders["numSymbol"]) + "\t" + String(notesTableHeaders["timecode"]) + "\t" + String(notesTableHeaders["note"]) + "\n\n"
 
 	    	for(var i = 0; i < notesData.length; i++) {
 	    		var currentComment = "";
@@ -663,19 +168,50 @@ TO DO:
 	    		}
 
 	    		if (i==0) {
-	    			downloadText += String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle).padEnd(50," ") + "\t" +String(notesData[i].timecode) + "\t" + String(currentComment);
+	    			downloadText += String(notesData[i].lapCount) + "\t" +String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		} else {
-	    			downloadText += "\n" + String(notesData[i].lapCount) + "\t" + String(notesData[i].videoTitle).padEnd(50," ") + "\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
+	    			downloadText += "\n" + String(notesData[i].lapCount) + "\t" + String(notesData[i].timecode) + "\t" + String(currentComment);
 	    		}
 	    	}
 	    	return downloadText;
 	    }
 
-	    function download() {
+	    function createSRT() {
+	    	downloadText = ""
+
+	    	for(var i = 0; i < notesData.length; i++) {
+	    		var currentComment = "";
+	    		if (notesData[i].userComment.trim().length == 0) {
+	    			currentComment = "NO NOTE"
+	    		} else {
+	    			currentComment = notesData[i].userComment.trim();
+	    		}
+
+	    		markEnd = String(notesData[i].timecode).slice(0,6) + String(parseInt(String(notesData[i].timecode).slice(6,8)) + 1).padStart(2,"0") + "," + String(notesData[i].timecode).slice(9,).padStart(3,"0")
+
+	    		markStart = String(notesData[i].timecode).slice(0,9) + String(notesData[i].timecode).slice(9,).padStart(3,"0")
+
+	    		rowText = String(notesData[i].lapCount) + "\n" + markStart + " --> " + markEnd + "\n" + String(currentComment) +  "\n\n";
+
+	    		// + String(notesData[i].videoTitle)
+
+	    		downloadText += rowText;
+
+	    	}
+	    	return downloadText;
+
+
+	    }
+
+	    function downloadTXT() {
 	    	var a = document.createElement("a");
 	    	document.body.appendChild(a);
 	    	var curText = createText();
+	    	var curSRT = createSRT();
+
 	    	let file = new Blob([curText],{type: "text/plain;charset=utf-8"});
+	    	let srt = new Blob([curSRT],{type: "text/plain;charset=utf-8"})
+
 	    	if (downloadUrl) {
 	    		URL.revokeObjectURL(downloadUrl);
 	    	};
@@ -696,6 +232,54 @@ TO DO:
 	    	filenameID += "__" + String(Date.now());
 
 	    	saveBlob(file,filenameID)
+	    }
+
+	    function downloadSRT() {
+	    	var a = document.createElement("a");
+	    	document.body.appendChild(a);
+	    	var curText = createText();
+	    	var curSRT = createSRT();
+
+	    	let file = new Blob([curText],{type: "text/plain;charset=utf-8"});
+	    	let srt = new Blob([curSRT],{type: "text/plain;charset=utf-8"})
+
+	    	if (downloadUrl) {
+	    		URL.revokeObjectURL(downloadUrl);
+	    	};
+
+	    	// downloadUrl = URL.createObjectURL(file);
+	    	// a.setAttribute("href",downloadUrl);
+	    	// a.setAttribute("target","_blank");
+	    	// a.setAttribute("rel", "noopener noreferrer");
+
+	    	// a.click();
+
+	    	// if (projectHeading["title"] !== "Untitled Project"){
+	    	// 	var filenameID = String(projectHeading["title"])
+	    	// } else {
+	    	// 	var filenameID = "Timecode_Notes_"
+	    	// }
+
+	    	// filenameID += "__" + String(Date.now());
+
+	    	// saveBlob(file,filenameID)
+
+	    	downloadUrl = URL.createObjectURL(srt);
+	    	a.setAttribute("href",downloadUrl);
+	    	a.setAttribute("target","_blank");
+	    	a.setAttribute("rel", "noopener noreferrer");
+
+	    	a.click();
+
+	    	if (projectHeading["title"] !== "Untitled Project"){
+	    		var filenameID = String(projectHeading["title"])
+	    	} else {
+	    		var filenameID = "Timecode_Notes_"
+	    	}
+
+	    	filenameID += "__" + "SRT" + "__" + String(Date.now()) + ".srt";
+
+	    	saveBlob(srt,filenameID)
 	    }
 
 	    // CREDIT for this function that causes the same file to be shown in the browser to be downloaded instead:
