@@ -6,6 +6,11 @@ html {
   box-sizing: inherit;
 }
 
+body {
+  margin: 1rem;
+  padding 1rem;
+}
+
 table, th, td {
   border: 1px solid black;
   border-collapse: collapse;
