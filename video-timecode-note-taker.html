@@ -51,7 +51,8 @@ TO DO:
  -->
 
 	<title></title>
-	<link rel="stylesheet" type="text/css" href="styles/timecode-style.css">
+<!-- 	<link rel="stylesheet" type="text/css" href="styles/timecode-style.css"> -->
+	<link href="{{ 'styles/timecode-style.css' | relative_url }}"
 
 </head>
 <body>
@@ -120,13 +121,24 @@ TO DO:
 			</tr>
 		</table>
 	</section>
-
-	<script type="text/javascript" src="scripts/Heading.js"></script>
-	<script type="text/javascript" src="scripts/Tablenotes.js"></script>
-	<script type="text/javascript" src="scripts/Timer.js"></script>
-	<script type="text/javascript" src="scripts/timecode-setup-functions.js"></script>
-	<script type="text/javascript" src="scripts/timecode-event-listeners.js"></script>
-	<script type="text/javascript" src="scripts/timecode-local-storage.js"></script>
+	
+	<script src="{{ 'scripts/Heading.js' | relative_url }}"></script>
+<!-- 	<script type="text/javascript" src="scripts/Heading.js"></script> -->
+	
+	<script src="{{ 'scripts/Tablenotes.js' | relative_url }}"></script>
+<!-- 	<script type="text/javascript" src="scripts/Tablenotes.js"></script> -->
+	
+	<script src="{{ 'scripts/Timer.js' | relative_url }}"></script>
+<!-- 	<script type="text/javascript" src="scripts/Timer.js"></script> -->
+	
+	<script src="{{ 'scripts/timecode-setup-functions.js' | relative_url }}"></script>
+<!-- 	<script type="text/javascript" src="scripts/timecode-setup-functions.js"></script> -->
+	
+	<script src="{{ 'scripts/timecode-event-listeners.js' | relative_url }}"></script>
+<!-- 	<script type="text/javascript" src="scripts/timecode-event-listeners.js"></script> -->
+	
+	<script src="{{ 'scripts/timecode-local-storage.js' | relative_url }}"></script>
+<!-- 	<script type="text/javascript" src="scripts/timecode-local-storage.js"></script> -->
 	
 
 
