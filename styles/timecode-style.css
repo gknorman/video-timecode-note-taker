@@ -1,0 +1,36 @@
+html {
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+th {
+  padding: 5px 15px 5px 15px;
+}
+
+th {
+  text-align: left;
+}
+
+input[type=text], select, textarea{
+  width: 100%;
+  max-width: 60%;
+  min-width: 15px;
+  padding-left: 12px;
+  padding-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+#timer {
+  font-size: 2rem;
+}
