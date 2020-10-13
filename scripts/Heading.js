@@ -4,7 +4,7 @@ let notesTableHeaders = {
 	"vidTitle": "Video Title",
 	"timecode": "Timecode",
 	"note": "Note"
-}
+};
 
 const comments = document.getElementById("comments");
 let videoTitleElement = document.getElementById("videoTitle");
@@ -45,7 +45,7 @@ function changeHeading(key,value="") {
 	localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
 
 	renderHeading();
-
+};
 
 function changeFPS(newFPS="") {
 	    	if (newFPS) {
@@ -59,11 +59,11 @@ function changeFPS(newFPS="") {
 	    	}
 	    	fpsBtn.innerHTML = "Current FPS: " + String(fps);
 	    	localStorage.setItem('savedFPS',fps);
-	    	if (notesData.length > 0) {
+	    	
+		if (notesData.length > 0) {
 	    		replaceTimecode();
-	    	}
-	    }
-}
+		}
+	};
 
 function newTitle(videoTitleInput="") {
 	    	// console.log(videoTitle)
@@ -98,5 +98,5 @@ function resetHeading() {
 	console.log(projectHeading)
 	localStorage.setItem('notesHeading', JSON.stringify(projectHeading));
 	renderHeading();
-}
+};
 
